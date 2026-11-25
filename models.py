@@ -167,6 +167,19 @@ class LimitHabit(Habit):
         )
 
 
+class MoodLog:
+    def __init__(self, score: int, note: str = "", date_str: str = None):
+        self._date = date_str if date_str else date.today().isoformat()
+        self.set_score(score)
+        self._note = note.strip()
+
+    def get_date(self):
+
+    def set_score(self, score):
+        if not (1 <= score <= 5):
+            raise ValueError("A mood score must be between 1 and 5")
+
+
 class HabitManager:
 
     def save_habit_data(habits: list):

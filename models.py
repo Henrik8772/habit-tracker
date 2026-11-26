@@ -250,3 +250,53 @@ class HabitManager:
                           for m in data.get("moodlogs", [])]
 
     def add_habit(self, habit):
+        if not isinstance(habit, Habit):
+            raise TypeError("Expected a Habit object.")
+        self._habits.append(habit)
+        self.save_data()
+
+    def add_moodlog(self, moodlog):
+        if not isinstance(moodlog, MoodLog):
+            raise TypeError("Expected a Moodlog object.")
+        self._moodlogs.append(moodlog)
+        self.save_data()
+
+    def remove_habit(self, index):
+        if 0 <= index < len(self._habits):
+            self._habits.pop(index)
+            self.save_data()
+            return True
+        return False
+
+    def check_in_habit(self, index, date_str=None):
+        if 0 <= index < len(self._habits):
+            success = self._habits[index].check_in(date_str)
+            self.save_data()
+            return success
+        return False
+
+    def get_habits(self):
+        return list(self._habits)
+
+    def get_moodlogs(self):
+        return list(self._moodlogs)
+
+    def get_daily_overview(self, target_date=None):
+        if target_date is None:
+            target_date = date.today().isoformat()
+
+        completed_habits = []
+        for habit in self._habits:
+            if target_date in habit.get_completed_dates():
+                completed_habits.append(habit)
+
+        daily_moods = []
+        for log in self._moodlogs:
+            if log.get_date() == target_date:
+                daily_moods.append(log)
+
+        return {
+            "date": target_date,
+            "completed_habits": completed_habits,
+            "moodlogs": daily_moods
+        }

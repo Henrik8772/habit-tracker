@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 import json
 
-FILENAME = "user_habit.json"
+FILENAME = "user_data.json"
 
 
 class Habit:
@@ -174,22 +174,79 @@ class MoodLog:
         self._note = note.strip()
 
     def get_date(self):
+        return self._date
+
+    def get_score(self):
+        return self._score
+
+    def get_note(self):
+        return self._note
 
     def set_score(self, score):
         if not (1 <= score <= 5):
             raise ValueError("A mood score must be between 1 and 5")
+        self._score = score
+
+    def get_status(self):
+        mood_comp = f"[{self._date}] Mood: {self._score}/5"
+        if self._note:
+            mood_comp += f" - {self._note}"
+        return mood_comp
+
+    def to_dict(self):
+        return {
+            "date": self._date,
+            "score": self._score,
+            "note": self._note
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            score=data["score"],
+            note=data.get("note", ""),
+            date_str=data.get("date")
+        )
 
 
 class HabitManager:
+    def __init__(self, filename=FILENAME):
+        self._filename = filename
+        self._habits = []
+        self._moodlogs = []
+        self.load_data()
 
-    def save_habit_data(habits: list):
-        with open(FILENAME, "w", encoding="utf-8") as file:
-            json.dump(habits, file, indent=2, ensure_ascii=False)
+    def save_data(self):
+        data = {
+            "habits": [h.to_dict() for h in self._habits],
+            "moodlogs": [m.to_dict() for m in self._moodlogs]
+        }
+        with open(self._filename, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
 
-    def load_habit_data():
+    def load_data(self):
         try:
-            with open(FILENAME, "r", encoding="utf-8") as file:
-                return json.load(file)
+            with open(self._filename, "r", encoding="utf-8") as file:
+                data = json.load(file)
 
-        except FileNotFoundError:
-            return []
+        except (FileNotFoundError, json.JSONDecodeError):
+            self._habits = []
+            self._moodlogs = []
+            return
+
+        self._habits = []
+        for item in data.get("habits", []):
+            habit_type = item.get("type")
+            if habit_type == "DailyHabit":
+                self._habits.append(DailyHabit.from_dict(item))
+
+            elif habit_type == "WeeklyHabit":
+                self._habits.append(WeeklyHabit.from_dict(item))
+
+            elif habit_type == "LimitHabit":
+                self._habits.append(LimitHabit.from_dict(item))
+
+        self._moodlogs = [MoodLog.from_dict(m)
+                          for m in data.get("moodlogs", [])]
+
+    def add_habit(self, habit):

@@ -6,7 +6,6 @@ FILENAME = "user_data.json"
 
 class Habit:
     def __init__(self, name: str, completed_dates=None):
-        self._name = name
         self.set_name(name)
 
         if completed_dates is None:
